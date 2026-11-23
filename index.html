@@ -99,6 +99,24 @@
       50% { opacity: 1; }
     }
 
+    /* ---------- 返回按钮 ---------- */
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 6px;
+      padding: 6px 10px 6px 4px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .back:hover { color: var(--ink); background: #eef1f7; }
+
     /* ---------- 模式选择 ---------- */
     .menu-title {
       font-size: 15px;
@@ -500,6 +518,7 @@
 </head>
 <body>
   <div class="game">
+    <button id="backBtn" class="back" type="button" hidden>← 返回</button>
     <h1>M&amp;O</h1>
     <p class="subtitle">用上一个词的尾字母，接出下一个词。卡住可以点「提示」，代价是 1 条命。</p>
 
@@ -555,7 +574,6 @@
         <span>最高 <b id="best">0</b></span>
         <span class="lives" id="lives"></span>
         <button class="restart" id="restart" type="button">重开</button>
-        <button class="restart" id="changeMode" type="button">换模式</button>
       </div>
 
       <div class="hint" id="hint"></div>
@@ -1078,6 +1096,7 @@ globalThis.MO_DATA = {"defs":{"killer":"n. (非正式)杀人者, 屠杀者, 猛�
       state.best = bestOf();
       $('menu').hidden = true;
       $('play').hidden = false;
+      $('backBtn').hidden = false;
       newRun();
       $('answer').focus();
     }
@@ -1089,6 +1108,7 @@ globalThis.MO_DATA = {"defs":{"killer":"n. (非正式)杀人者, 屠杀者, 猛�
       $('play').hidden = true;
       $('menu').hidden = false;
       $('bookPick').hidden = true;
+      $('backBtn').hidden = true;
       renderMenu();
     }
 
@@ -1228,7 +1248,7 @@ globalThis.MO_DATA = {"defs":{"killer":"n. (非正式)杀人者, 屠杀者, 猛�
       newRun();
     });
     $('backMenu').addEventListener('click', backToMenu);
-    $('changeMode').addEventListener('click', backToMenu);
+    $('backBtn').addEventListener('click', backToMenu);
     $('restart').addEventListener('click', function () {
       if (confirm('重新开始？当前进度会清空。')) newRun();
     });
@@ -1264,6 +1284,7 @@ globalThis.MO_DATA = {"defs":{"killer":"n. (非正式)杀人者, 屠杀者, 猛�
           state.startBest = state.best;
           $('menu').hidden = true;
           $('play').hidden = false;
+          $('backBtn').hidden = false;
           lastDefWord = state.history.length ? state.history[state.history.length - 1] : '';
           render();
           showMessage('已恢复上次进度：第 ' + state.round + ' 回合', 'info');
