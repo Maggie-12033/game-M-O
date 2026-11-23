@@ -642,6 +642,28 @@ globalThis.MO_DATA = {"defs":{"killer":"n. (非正式)杀人者, 屠杀者, 猛�
       try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
     }
 
+    // 最高分按模式分开存：{ normal: 120, hard: 80, 'study:CET4': 30 }
+    function loadBestMap() {
+      const v = loadJSON(KEY_BEST, {});
+      if (typeof v === 'number') return { normal: v };   // 旧版本只有一个数字
+      return (v && typeof v === 'object') ? v : {};
+    }
+
+    const bestMap = loadBestMap();
+
+    function bestKey() {
+      return state.mode === 'study' ? 'study:' + state.book : (state.mode || 'normal');
+    }
+
+    function bestOf() {
+      return bestMap[bestKey()] || 0;
+    }
+
+    function saveBest(v) {
+      bestMap[bestKey()] = v;
+      saveJSON(KEY_BEST, bestMap);
+    }
+
     const DEFS_NORMAL = (typeof globalThis.DEFS === 'object' && globalThis.DEFS) ? globalThis.DEFS : {};
     const DATA = (typeof globalThis.MO_DATA === 'object' && globalThis.MO_DATA)
       ? globalThis.MO_DATA
@@ -710,7 +732,7 @@ globalThis.MO_DATA = {"defs":{"killer":"n. (非正式)杀人者, 屠杀者, 猛�
       history: [],
       hintWord: '',
       over: false,
-      best: loadJSON(KEY_BEST, 0),
+      best: 0,
       startBest: 0,
       bookMap: loadJSON(KEY_BOOK, {})
     };
@@ -1023,7 +1045,7 @@ globalThis.MO_DATA = {"defs":{"killer":"n. (非正式)杀人者, 屠杀者, 猛�
       state.isNewRecord = state.score > state.startBest;
       if (state.score > state.best) {
         state.best = state.score;
-        saveJSON(KEY_BEST, state.best);
+        saveBest(state.best);
       }
       removeKey(KEY_SAVE);
       $('answer').blur();
@@ -1038,6 +1060,7 @@ globalThis.MO_DATA = {"defs":{"killer":"n. (非正式)杀人者, 屠杀者, 猛�
       state.hintWord = '';
       state.over = false;
       state.isNewRecord = false;
+      state.best = bestOf();
       state.startBest = state.best;
       state.length = 4;
       state.letter = pickStartLetter();
@@ -1052,7 +1075,7 @@ globalThis.MO_DATA = {"defs":{"killer":"n. (非正式)杀人者, 屠杀者, 猛�
       buildActive(mode, book);
       state.mode = mode;
       state.book = book || '';
-      state.best = loadJSON(KEY_BEST, 0);
+      state.best = bestOf();
       $('menu').hidden = true;
       $('play').hidden = false;
       newRun();
@@ -1066,6 +1089,7 @@ globalThis.MO_DATA = {"defs":{"killer":"n. (非正式)杀人者, 屠杀者, 猛�
       $('play').hidden = true;
       $('menu').hidden = false;
       $('bookPick').hidden = true;
+      renderMenu();
     }
 
     /* ================================================================
@@ -1112,7 +1136,7 @@ globalThis.MO_DATA = {"defs":{"killer":"n. (非正式)杀人者, 屠杀者, 猛�
 
       if (state.score > state.best) {
         state.best = state.score;
-        saveJSON(KEY_BEST, state.best);
+        saveBest(state.best);
       }
 
       state.round += 1;
@@ -1151,13 +1175,18 @@ globalThis.MO_DATA = {"defs":{"killer":"n. (非正式)杀人者, 屠杀者, 猛�
        13. 菜单渲染
        ================================================================ */
     function renderMenu() {
-      $('tagNormal').textContent = WORD_COUNT_NORMAL + ' 词';
-      $('tagHard').textContent = DATA.hard.length + ' 词';
+      const withBest = (text, key) => {
+        const b = bestMap[key] || 0;
+        return text + (b ? ' · 最高 ' + b : '');
+      };
+
+      $('tagNormal').textContent = withBest(WORD_COUNT_NORMAL + ' 词', 'normal');
+      $('tagHard').textContent = withBest(DATA.hard.length + ' 词', 'hard');
 
       const books = DATA.books || {};
       const set = (id, key) => {
         const el = $(id);
-        if (el) el.textContent = (books[key] ? books[key].length : 0) + ' 词';
+        if (el) el.textContent = withBest((books[key] ? books[key].length : 0) + ' 词', 'study:' + key);
       };
       set('nCET4', 'CET4'); set('nCET6', 'CET6'); set('nTEM4', 'TEM4');
       set('nTEM8', 'TEM8'); set('nIELTS', 'IELTS'); set('nTOEFL', 'TOEFL');
@@ -1231,6 +1260,8 @@ globalThis.MO_DATA = {"defs":{"killer":"n. (非正式)杀人者, 屠杀者, 猛�
         buildActive(saved.mode, saved.book);
         if (availableWords(saved.letter, saved.length, saved.history).length > 0) {
           applySave(saved);
+          state.best = bestOf();
+          state.startBest = state.best;
           $('menu').hidden = true;
           $('play').hidden = false;
           lastDefWord = state.history.length ? state.history[state.history.length - 1] : '';
