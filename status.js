@@ -4,7 +4,7 @@
 // 更新完成改回 false 即可恢复。这个文件不需要改游戏本体。
 // ============================================================
 globalThis.MO_STATUS = {
-  maintenance: false,
+  maintenance: true,
   message: '新版正在部署，通常 1–2 分钟。',
   until: '' // 可选，例如 '今天 11:30'
 };
